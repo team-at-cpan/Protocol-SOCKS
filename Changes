@@ -1,6 +1,10 @@
 Revision history for {{$dist->name}}
 
 {{$NEXT}}
+	No new features.
+
+	Test fixes:
+	* Missing tests from previous release
 
 0.001     2014-08-23 19:40:37+01:00 Europe/London
 	Initial CPAN release
