@@ -3,7 +3,7 @@ package Protocol::SOCKS;
 use strict;
 use warnings;
 
-our $VERSION = '0.002';
+our $VERSION = '0.003';
 
 =head1 NAME
 
@@ -131,9 +131,8 @@ sub extract_address {
 	my ($type) = unpack 'C1', substr $$buf, 0, 1;
 	if($type == ATYPE_IPV4) {
 		return undef unless length($$buf) >= (1 + 4);
-		(undef, my $ip) = unpack 'C1N1', substr $$buf, 0, 1 + 4, '';
+		(undef, my $ip) = unpack 'C1A4', substr $$buf, 0, 1 + 4, '';
 		return '' unless $ip;
-		warn "== $ip\n";
 		return inet_ntoa($ip);
 	} elsif($type == ATYPE_IPV6) {
 		return undef unless length($$buf) >= (1 + 16);
