@@ -3,6 +3,8 @@ package Protocol::SOCKS::Client;
 use strict;
 use warnings;
 
+use parent qw(Protocol::SOCKS);
+
 =head1 NAME
 
 Protocol::SOCKS::Client - client support for SOCKS protocol
@@ -80,11 +82,11 @@ sub on_read {
 		}
 		return;
 	} else {
-		warn "non-auth, have " . length($$buf) . "bytes";
-		return unless my $details = $self->parse_reply($buf);
+		# warn "non-auth, have " . length($$buf) . "bytes";
+		return unless my ($host, $port) = $self->parse_reply($buf);
 
 		my $f = shift @{$self->{awaiting_reply}};
-		$f->done($details);
+		$f->done($host, $port);
 	}
 }
 
@@ -118,7 +120,7 @@ sub connect {
 			0x00,
 		) . $opaque_addr . pack('n1', $port)
 	);
-	$f;#->then(sub {
+	$f;
 }
 
 =head2 parse_reply
@@ -132,14 +134,15 @@ sub parse_reply {
 	return unless length $$buffref >= 4;
 	my ($version, $status, $reserved, $atype) = unpack 'C1C1C1C1', substr $$buffref, 0, 4;
 	if($status != 0) {
-		warn $REPLY_CODE{$status};
+		# warn $Protocol::SOCKS::REPLY_CODE{$status};
 		return;
 	}
 
 	substr $$buffref, 0, 3, '';
 	my $addr = $self->extract_address($buffref);
 	my $port = unpack 'n1', substr $$buffref, 0, 2, '';
-	warn "Addr $addr, port $port\n";
+	# warn "Addr $addr, port $port\n";
+	return $addr, $port;
 }
 
 1;

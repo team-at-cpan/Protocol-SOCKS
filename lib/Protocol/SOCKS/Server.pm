@@ -3,6 +3,8 @@ package Protocol::SOCKS::Server;
 use strict;
 use warnings;
 
+use parent qw(Protocol::SOCKS);
+
 =head1 NAME
 
 Protocol::SOCKS::Server - server support for SOCKS protocol
@@ -71,18 +73,26 @@ sub on_read {
 	my ($self, $buf) = @_;
 	if(!$self->init->is_ready) {
 		return if length($$buf) < 3;
-		my (undef, $method_count) = unpack 'C1C', substr $$buff, 0, 2;
+		my (undef, $method_count) = unpack 'C1C', substr $$buf, 0, 2;
 		return unless length($$buf) >= 2 + $method_count;
 
 		my ($version, $methods) = unpack 'C1C/C*', substr $$buf, 0, 2 + $method_count, '';
 		die "Invalid version" unless $version == $self->version;
 		my $auth_method;
+		METHOD:
 		for my $method (split //, $methods) {
 			next METHOD unless grep $method == $_, $self->auth_methods;
 			$auth_method = $method;
 			last METHOD;
 		}
-		return $self->init->fail(auth => 'no suitable methods') unless defined $auth_method;
+		unless(defined $auth_method) {
+			$self->write(
+				pack 'C1C1',
+					$self->version,
+					AUTH_FAIL,
+			);
+			return $self->init->fail(auth => 'no suitable methods');
+		}
 		$self->init->done($version => $auth_method);
 		return $self->write(
 			pack 'C1C1',
